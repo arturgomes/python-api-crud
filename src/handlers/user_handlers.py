@@ -86,46 +86,18 @@ async def list_users(
     page_size: int = Query(10, ge=1, le=100, description="Items per page"),
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    List users with pagination.
-
-    Test file: tests/test_users.py::TestListUsers
-
-    Requirements:
-    - Accept page and page_size query parameters
-    - Return paginated list of users
-    - Include pagination metadata (total, page, page_size)
-    - Order by created_at descending
-
-    Response format:
-    {
-        "users": [...],
-        "total": 100,
-        "page": 1,
-        "page_size": 10
-    }
-
-    Hints:
-    - Use select(User).order_by(User.created_at.desc())
-    - Use .offset((page - 1) * page_size)
-    - Use .limit(page_size)
-    - Get total count with select(func.count(User.id))
-    """
+    
     db.expire_all()
-    # 1. Get total count
     count_result = await db.execute(select(func.count(User.id)))
     total = count_result.scalar()
 
-    # 2. Query paginated users
     offset = (page - 1) * page_size
     query = select(User).order_by(User.created_at.desc()).offset(offset).limit(page_size)
     result = await db.execute(query)
     users = result.scalars().all()
 
-    # 3. Convert User objects to UserResponse
     users_response = [UserResponse.model_validate(user) for user in users]
 
-    # 4. Return dict with users and metadata
     return {
         "users": users_response,
         "total": total,
@@ -143,7 +115,6 @@ async def get_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db)
 ):
-    # Force fresh query to see data from previous requests in same test
     db.expire_all()
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -155,7 +126,7 @@ async def get_user(
 
 
 # ============================================================================
-# TODO: Phase 2.4 - UPDATE User
+# Phase 2.4 - UPDATE User
 # ============================================================================
 
 @router.put("/{user_id}", response_model=UserResponse)
@@ -197,7 +168,7 @@ async def update_user(
 
 
 # ============================================================================
-# TODO: Phase 2.5 - DELETE User
+# Phase 2.5 - DELETE User
 # ============================================================================
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -223,12 +194,18 @@ async def delete_user(
     """
     # TODO: Implement user deletion
     # 1. Find user by ID (404 if not found)
+    db.expire_all()
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
     # 2. Delete from database
+    await db.delete(user)
+    await db.flush()
     # 3. Return 204
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="User deletion not implemented yet. Check tests/test_users.py for requirements."
-    )
+    return None
 
 
 # ============================================================================

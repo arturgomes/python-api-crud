@@ -206,8 +206,6 @@ class TestGetUser:
 class TestListUsers:
     """
     Tests for GET /users endpoint with pagination.
-
-    TODO: Implement GET /users endpoint with pagination
     """
 
     @pytest.mark.asyncio
@@ -324,8 +322,6 @@ class TestListUsers:
 class TestUpdateUser:
     """
     Tests for PUT /users/{id} endpoint.
-
-    TODO: Implement PUT /users/{id} endpoint
     """
 
     @pytest.mark.asyncio
@@ -441,7 +437,6 @@ class TestDeleteUser:
     """
     Tests for DELETE /users/{id} endpoint.
 
-    TODO: Implement DELETE /users/{id} endpoint
     """
 
     @pytest.mark.asyncio

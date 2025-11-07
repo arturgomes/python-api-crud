@@ -27,8 +27,8 @@ sudo apt install python3.11 python3.11-venv python3-pip
 Python 3.11.0 (or higher)
 ```
 
-- [ ] Python 3.11+ installed
-- [ ] pip installed
+- [x] Python 3.11+ installed
+- [x] pip installed
 
 ---
 
@@ -47,8 +47,8 @@ Docker version 20.10.x or higher
 Docker Compose version 2.x.x or higher
 ```
 
-- [ ] Docker installed
-- [ ] Docker Desktop running
+- [x] Docker installed
+- [x] Docker Desktop running
 
 ---
 
@@ -59,7 +59,7 @@ Docker Compose version 2.x.x or higher
 cd python-api-crud
 ```
 
-- [ ] In project directory
+- [x] In project directory
 
 ### 2. Create Virtual Environment
 ```bash
@@ -76,8 +76,8 @@ venv\Scripts\activate
 # You should see (venv) in your terminal prompt
 ```
 
-- [ ] Virtual environment created
-- [ ] Virtual environment activated
+- [x] Virtual environment created
+- [x] Virtual environment activated
 
 ### 3. Install Dependencies
 ```bash
@@ -87,7 +87,7 @@ pip3 install -r requirements.txt
 
 **Expected**: Installs FastAPI, SQLAlchemy, pytest, and other dependencies
 
-- [ ] Dependencies installed successfully
+- [x] Dependencies installed successfully
 
 ### 4. Copy Environment File
 ```bash
@@ -101,7 +101,7 @@ cat .env
 
 Should see DATABASE_URL, PORT, etc.
 
-- [ ] .env file exists with correct values
+- [x] .env file exists with correct values
 
 ### 5. Start Database
 ```bash
@@ -120,7 +120,7 @@ docker ps
 
 Should see a container named `python_crud_db` running
 
-- [ ] PostgreSQL container running
+- [x] PostgreSQL container running
 
 ---
 
@@ -140,7 +140,7 @@ python src/main.py
 🧪 Try: http://localhost:8000/calculate?a=5&b=3&op=add
 ```
 
-- [ ] Server starts without errors
+- [x] Server starts without errors
 
 ### 2. Test Calculator (in new terminal)
 ```bash
@@ -164,22 +164,22 @@ curl "http://localhost:8000/calculate?a=10&b=0&op=divide"
 
 **Expected**: `{"detail":"Division by zero"}`
 
-- [ ] Addition works
-- [ ] Division works
-- [ ] Error handling works
+- [x] Addition works
+- [x] Division works
+- [x] Error handling works
 
 ### 3. Check API Documentation
 Open browser: http://localhost:8000/docs
 
 **Expected**: Interactive Swagger UI with API documentation
 
-- [ ] Swagger UI loads
-- [ ] Calculator endpoint visible
+- [x] Swagger UI loads
+- [x] Calculator endpoint visible
 
 ### 4. Stop Server
 Press `Ctrl+C` in the terminal running the server
 
-- [ ] Server stops cleanly
+- [x] Server stops cleanly
 
 ---
 

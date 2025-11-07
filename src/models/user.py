@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import Column, String, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import declarative_base
@@ -84,17 +84,18 @@ class UserBase(BaseModel):
     - Like a base struct for other user types
     - DRY principle: shared fields defined once
     """
-    name: str = Field(..., min_length=1, max_length=255, description="User's name")
-    email: EmailStr = Field(..., description="User's email address")
-
-    class Config:
-        from_attributes = True  # Allows creating from SQLAlchemy models
-        json_schema_extra = {
+    model_config = ConfigDict(
+        from_attributes=True,  # Allows creating from SQLAlchemy models
+        json_schema_extra={
             "example": {
                 "name": "Alice Johnson",
                 "email": "alice@example.com"
             }
         }
+    )
+
+    name: str = Field(..., min_length=1, max_length=255, description="User's name")
+    email: EmailStr = Field(..., description="User's email address")
 
 
 class UserCreate(UserBase):
@@ -131,15 +132,16 @@ class UserUpdate(BaseModel):
             "name": "Alice Smith"  # Only update name
         }
     """
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    email: Optional[EmailStr] = None
-
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "Alice Smith"
             }
         }
+    )
+
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    email: Optional[EmailStr] = None
 
 
 class UserResponse(UserBase):
@@ -158,13 +160,9 @@ class UserResponse(UserBase):
         created_at: When the user was created
         updated_at: When the user was last updated
     """
-    id: UUID
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True  # Can be created from SQLAlchemy User
-        json_schema_extra = {
+    model_config = ConfigDict(
+        from_attributes=True,  # Can be created from SQLAlchemy User
+        json_schema_extra={
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "name": "Alice Johnson",
@@ -173,3 +171,4 @@ class UserResponse(UserBase):
                 "updated_at": "2024-01-01T12:00:00Z"
             }
         }
+    )

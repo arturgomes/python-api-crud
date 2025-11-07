@@ -198,45 +198,80 @@ pytest tests/test_calculator.py -v
 pytest -v
 ```
 
-- [ ] Calculator tests pass
-- [ ] User tests fail (expected - you'll implement them!)
+- [x] Calculator tests pass
+- [x] User tests fail (expected - you'll implement them!)
 
 ---
 
 ## 🗄️ Phase 1: Database Verification
 
-### 1. Initialize Database (Using Alembic)
+### 1. Initialize Alembic and Configure
 
-First, create the Alembic configuration:
+First, initialize Alembic (creates configuration files):
 
 ```bash
-# Initialize Alembic
+# Initialize Alembic (if not already done)
 alembic init migrations
 
 # This creates:
-# - alembic.ini (configuration)
-# - migrations/ (migration directory)
+# - alembic.ini (configuration file)
+# - migrations/ (migration directory with env.py)
 ```
 
-Then edit `alembic.ini` and update:
-```ini
-sqlalchemy.url = postgresql+asyncpg://pythonuser:pythonpass@localhost:5433/pythoncrud
-```
+**Important**: Don't edit `alembic.ini`! Your database URL comes from `.env` via `config.py`.
 
-- [ ] Alembic initialized
+### 2. Configure migrations/env.py
 
-### 2. Create Initial Migration
+The `migrations/env.py` file needs to know about your models and database. Update it to:
+
+1. Import your models and settings
+2. Set `target_metadata = Base.metadata`
+3. Convert async database URL to sync (Alembic uses psycopg2, not asyncpg)
+
+**Key changes needed**:
+- Add imports: `from config import settings` and `from models.user import Base`
+- Replace `target_metadata = None` with `target_metadata = Base.metadata`
+- Create `get_url()` function to convert `postgresql+asyncpg://` to `postgresql://`
+
+See the tutorial in env.py or ask for guidance!
+
+- [x] Alembic initialized
+- [x] env.py configured with Base.metadata
+- [x] URL conversion for sync driver
+
+### 3. Install Sync Database Driver
+
+Alembic needs the sync PostgreSQL driver (your app uses the async one):
+
 ```bash
-# Create migration for users table
-alembic revision -m "create users table"
-
-# Edit the generated file in migrations/versions/
-# Add the SQL to create users table (see migrations/001_create_users.sql)
+pip install psycopg2-binary
 ```
 
-- [ ] Migration created
+This allows Alembic to connect to PostgreSQL for running migrations.
 
-### 3. Run Migrations
+- [x] psycopg2-binary installed
+
+### 4. Create Initial Migration
+
+Use autogenerate to create migration from your User model:
+
+```bash
+# Auto-generate migration from models
+alembic revision --autogenerate -m "create users table"
+
+# This creates a file in migrations/versions/
+# Review the generated migration before applying!
+```
+
+**Expected**: Alembic detects your User model and generates the migration code.
+
+- [x] Migration created
+- [x] Reviewed generated migration file
+
+### 5. Run Migrations
+
+Apply the migration to create the users table:
+
 ```bash
 alembic upgrade head
 ```
@@ -246,7 +281,7 @@ alembic upgrade head
 INFO [alembic.runtime.migration] Running upgrade -> <revision>, create users table
 ```
 
-- [ ] Migrations applied successfully
+- [x] Migrations applied successfully
 
 ### 4. Verify Database Connection
 ```bash
@@ -261,9 +296,9 @@ docker exec -it python_crud_db psql -U pythonuser -d pythoncrud
 
 **Expected**: See users table with id, name, email, created_at, updated_at columns
 
-- [ ] Can connect to database
-- [ ] Users table exists
-- [ ] Table has correct schema
+- [x] Can connect to database
+- [x] Users table exists
+- [x] Table has correct schema
 
 ---
 
@@ -276,12 +311,12 @@ ls -la docs/
 ```
 
 **Expected files**:
-- [ ] LEARNING_PATH.md
-- [ ] PYTHON_CONCEPTS.md
-- [ ] TYPESCRIPT_TO_PYTHON.md
-- [ ] QUICK_START.md
-- [ ] TDD_GUIDE.md
-- [ ] PROJECT_SUMMARY.md
+- [x] LEARNING_PATH.md
+- [x] PYTHON_CONCEPTS.md
+- [x] TYPESCRIPT_TO_PYTHON.md
+- [x] QUICK_START.md
+- [x] TDD_GUIDE.md
+- [x] PROJECT_SUMMARY.md
 
 ```bash
 ls -la *.md

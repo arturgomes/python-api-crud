@@ -55,22 +55,24 @@ async def create_user(
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db)
 ):
-    # Check for duplicate email - force fresh query with expire_all first
+
     db.expire_all()
     result = await db.execute(select(User).where(User.email == user_data.email))
     existing_user = result.scalar_one_or_none()
 
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already exists")
-        
+    
 
-    new_user = User(
+    stmt = insert(User).values(
         name=user_data.name,
         email=user_data.email
-    )
-    db.add(new_user)
+    ).returning(User)
+    
+    result = await db.execute(stmt)
     await db.flush()
-    await db.refresh(new_user)
+    new_user = result.scalar_one()
+    
     return new_user
 
 # ============================================================================
@@ -153,15 +155,16 @@ async def update_user(
         if existing_user:
             raise HTTPException(status_code=400, detail="Email already exists")
     
-    for key, value in update_data.items():
-        setattr(user, key, value)
 
-    user.updated_at = datetime.now(timezone.utc)
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
 
+    stmt = update(User).where(User.id == user_id).values(**update_data).returning(User)
+    result = await db.execute(stmt)
     await db.flush()
-    await db.refresh(user)
+    updated_user = result.scalar_one()
 
-    return user
+    return updated_user
 
 
 # ============================================================================
@@ -180,7 +183,9 @@ async def delete_user(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    await db.delete(user)
+
+    stmt = delete(User).where(User.id == user_id)
+    await db.execute(stmt)
     await db.flush()
 
     return None

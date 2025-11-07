@@ -24,43 +24,40 @@ from main import app
 from db.connection import engine, AsyncSessionLocal, get_db, init_db, drop_db
 
 
-@pytest.fixture(scope="session")
-def event_loop():
+@pytest.fixture(scope="session", autouse=True)
+async def setup_database():
     """
-    Create an event loop for the entire test session.
+    Set up database once for all tests.
 
     Compare to Rust:
-    - Like #[tokio::test] but for all tests
-    - pytest-asyncio needs this for async tests
+    - Like setting up test database once before all tests
+    - More efficient than per-test setup
     """
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+    # Create tables once
+    await init_db()
+    yield
+    # Drop tables after all tests
+    await drop_db()
 
 
 @pytest.fixture(scope="function")
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
     """
-    Provide a database session for each test.
+    Provide a database session for each test with transaction rollback.
 
     Compare to Rust:
     - Like creating a test PgPool in Rust
-    - Each test gets a fresh session
-    - Automatically rolls back after test
+    - Each test gets isolated session with automatic rollback
+    - Ensures test isolation without recreating tables
 
     Yields:
         AsyncSession: Database session for testing
     """
-    # Create tables
-    await init_db()
-
     async with AsyncSessionLocal() as session:
-        yield session
-        # Rollback any changes made during the test
-        await session.rollback()
-
-    # Drop tables after test
-    await drop_db()
+        # Start a transaction
+        async with session.begin():
+            yield session
+            # Rollback happens automatically when exiting the context
 
 
 @pytest.fixture(scope="function")
@@ -85,7 +82,8 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
 
     app.dependency_overrides[get_db] = override_get_db
 
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    from httpx import ASGITransport
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
     # Clear overrides after test

@@ -160,6 +160,10 @@ class UserResponse(UserBase):
         created_at: When the user was created
         updated_at: When the user was last updated
     """
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
     model_config = ConfigDict(
         from_attributes=True,  # Can be created from SQLAlchemy User
         json_schema_extra={

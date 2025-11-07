@@ -138,8 +138,6 @@ class TestCreateUser:
 class TestGetUser:
     """
     Tests for GET /users/{id} endpoint.
-
-    TODO: Implement GET /users/{id} endpoint
     """
 
     @pytest.mark.asyncio

@@ -83,7 +83,7 @@ class TestCreateUser:
         # First creation succeeds
         response1 = await client.post("/users", json=sample_user_data)
         assert response1.status_code == 201
-
+        
         # Second creation with same email fails
         response2 = await client.post("/users", json=sample_user_data)
         assert response2.status_code == 400

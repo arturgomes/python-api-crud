@@ -1,5 +1,5 @@
 """
-User CRUD handlers - Phase 2 Implementation (TODO)
+User CRUD handlers - Phase 2 Implementation 
 
 This module contains the route handlers for user operations.
 
@@ -35,9 +35,10 @@ Hints:
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, insert, update, delete
+from sqlalchemy import select, insert, update, delete, func
 from uuid import UUID
 from typing import List
+from datetime import datetime, timezone
 
 from db.connection import get_db
 from models.user import User, UserCreate, UserUpdate, UserResponse
@@ -47,7 +48,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 # ============================================================================
-# TODO: Phase 2.1 - CREATE User
+# Phase 2.1 - CREATE User
 # ============================================================================
 
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -55,72 +56,28 @@ async def create_user(
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Create a new user.
+    # Check for duplicate email - force fresh query with expire_all first
+    db.expire_all()
+    result = await db.execute(select(User).where(User.email == user_data.email))
+    existing_user = result.scalar_one_or_none()
 
-    Test file: tests/test_users.py::TestCreateUser
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already exists")
+        
 
-    Requirements:
-    - Accept UserCreate model (name, email)
-    - Validate email format (Pydantic does this automatically)
-    - Check for duplicate email (return 400 if exists)
-    - Insert into database
-    - Return UserResponse with all fields including id and timestamps
-
-    Hints:
-    - Use SQLAlchemy's select to check for existing email
-    - Use insert() or db.add() to create user
-    - Catch IntegrityError for unique constraint violations
-    - Don't forget db.commit() and db.refresh() to get generated fields
-    """
-    # TODO: Implement user creation
-    # 1. Check if email already exists
-    # 2. Create new user
-    # 3. Save to database
-    # 4. Return UserResponse
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="User creation not implemented yet. Check tests/test_users.py for requirements."
+    new_user = User(
+        name=user_data.name,
+        email=user_data.email
     )
+    db.add(new_user)
+    await db.flush()
+    await db.refresh(new_user)
+    return new_user
+   
 
 
 # ============================================================================
-# TODO: Phase 2.2 - READ User
-# ============================================================================
-
-@router.get("/{user_id}", response_model=UserResponse)
-async def get_user(
-    user_id: UUID,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Get a user by ID.
-
-    Test file: tests/test_users.py::TestGetUser
-
-    Requirements:
-    - Accept UUID path parameter
-    - Query database for user
-    - Return 404 if user not found
-    - Return UserResponse if found
-
-    Hints:
-    - Use select(User).where(User.id == user_id)
-    - Use db.execute() then .scalar_one_or_none()
-    - Raise HTTPException(404) if user not found
-    """
-    # TODO: Implement user retrieval
-    # 1. Query user by ID
-    # 2. Return 404 if not found
-    # 3. Return UserResponse if found
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="User retrieval not implemented yet. Check tests/test_users.py for requirements."
-    )
-
-
-# ============================================================================
-# TODO: Phase 2.3 - LIST Users (with pagination)
+# Phase 2.3 - LIST Users (with pagination)
 # ============================================================================
 
 @router.get("", response_model=dict)
@@ -154,14 +111,47 @@ async def list_users(
     - Use .limit(page_size)
     - Get total count with select(func.count(User.id))
     """
-    # TODO: Implement user listing with pagination
+    db.expire_all()
     # 1. Get total count
+    count_result = await db.execute(select(func.count(User.id)))
+    total = count_result.scalar()
+
     # 2. Query paginated users
-    # 3. Return dict with users and metadata
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="User listing not implemented yet. Check tests/test_users.py for requirements."
-    )
+    offset = (page - 1) * page_size
+    query = select(User).order_by(User.created_at.desc()).offset(offset).limit(page_size)
+    result = await db.execute(query)
+    users = result.scalars().all()
+
+    # 3. Convert User objects to UserResponse
+    users_response = [UserResponse.model_validate(user) for user in users]
+
+    # 4. Return dict with users and metadata
+    return {
+        "users": users_response,
+        "total": total,
+        "page": page,
+        "page_size": page_size
+    }
+
+
+# ============================================================================
+# Phase 2.2 - READ User
+# ============================================================================
+
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user(
+    user_id: UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    # Force fresh query to see data from previous requests in same test
+    db.expire_all()
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
 
 
 # ============================================================================
@@ -174,35 +164,36 @@ async def update_user(
     user_data: UserUpdate,
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Update a user.
+    db.expire_all()
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
 
-    Test file: tests/test_users.py::TestUpdateUser
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    Requirements:
-    - Accept UUID path parameter
-    - Accept UserUpdate model (optional name, optional email)
-    - Only update fields that are provided (partial update)
-    - Return 404 if user not found
-    - Return 400 if email already exists (different user)
-    - Return updated UserResponse
+    update_data = user_data.model_dump(exclude_unset=True)
 
-    Hints:
-    - First check if user exists
-    - Build update dict with only provided fields: user_data.model_dump(exclude_unset=True)
-    - Check for email uniqueness if email is being updated
-    - Use update().where().values() or update object attributes
-    - updated_at will be automatically updated by trigger
-    """
-    # TODO: Implement user update
-    # 1. Find user by ID (404 if not found)
-    # 2. Check for duplicate email if updating email
-    # 3. Update only provided fields
-    # 4. Save and return updated user
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="User update not implemented yet. Check tests/test_users.py for requirements."
-    )
+    if "email" in update_data:
+        result = await db.execute(
+            select(User).where(
+                User.email == update_data["email"],
+                User.id != user_id 
+            )
+        )
+        existing_user = result.scalar_one_or_none()
+        
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already exists")
+    
+    for key, value in update_data.items():
+        setattr(user, key, value)
+
+    user.updated_at = datetime.now(timezone.utc)
+
+    await db.flush()
+    await db.refresh(user)
+
+    return user
 
 
 # ============================================================================

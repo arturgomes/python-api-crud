@@ -27,6 +27,7 @@ import uvicorn
 
 from config import settings
 
+from handlers.user_handlers import router as user_router
 
 # ============================================================================
 # PHASE 0: CALCULATOR API
@@ -197,7 +198,7 @@ async def calculate(
 # - GET    /users       - List users with pagination
 # - PUT    /users/{id}  - Update user
 # - DELETE /users/{id}  - Delete user
-
+app.include_router(user_router)
 
 # ============================================================================
 # APPLICATION ENTRY POINT

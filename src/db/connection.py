@@ -15,6 +15,7 @@ Compare to Rust:
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Session
+from sqlalchemy.pool import NullPool
 
 from config import settings
 from models.user import Base
@@ -22,10 +23,12 @@ from models.user import Base
 
 # Create async engine
 # Compare to Rust: Like creating PgPool::connect()
+# Note: NullPool prevents connection pool issues in async test environments
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,  # Log SQL queries in debug mode
-    future=True
+    future=True,
+    poolclass=NullPool  # Disable pooling for async compatibility
 )
 
 # Create session factory

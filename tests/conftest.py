@@ -25,19 +25,23 @@ from db.connection import engine, AsyncSessionLocal, get_db, init_db, drop_db
 
 
 @pytest.fixture(scope="session", autouse=True)
-async def setup_database():
+def setup_database():
     """
     Set up database once for all tests.
 
     Compare to Rust:
     - Like setting up test database once before all tests
     - More efficient than per-test setup
+
+    Note: This is synchronous to avoid event loop conflicts.
+    Uses asyncio.run() to execute async database operations.
     """
+    import asyncio
     # Create tables once
-    await init_db()
+    asyncio.run(init_db())
     yield
     # Drop tables after all tests
-    await drop_db()
+    asyncio.run(drop_db())
 
 
 @pytest.fixture(scope="function")
@@ -58,6 +62,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
         async with session.begin():
             yield session
             # Rollback happens automatically when exiting the context
+            await session.rollback()
 
 
 @pytest.fixture(scope="function")

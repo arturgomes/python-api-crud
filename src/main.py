@@ -20,7 +20,7 @@ Compare to Rust:
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from enum import Enum
 from typing import Optional
 import uvicorn
@@ -56,14 +56,15 @@ class CalculatorResponse(BaseModel):
     - Pydantic handles JSON serialization automatically
     - Type hints provide validation
     """
-    result: float
-
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "result": 15.0
             }
         }
+    )
+
+    result: float
 
 
 class ErrorResponse(BaseModel):
@@ -74,14 +75,15 @@ class ErrorResponse(BaseModel):
     - Like Result<T, E> but for HTTP responses
     - FastAPI automatically formats errors
     """
-    error: str
-
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "error": "Division by zero"
             }
         }
+    )
+
+    error: str
 
 
 # Create FastAPI application

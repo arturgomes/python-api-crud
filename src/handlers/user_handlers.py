@@ -46,7 +46,6 @@ from models.user import User, UserCreate, UserUpdate, UserResponse
 # Create router
 router = APIRouter(prefix="/users", tags=["users"])
 
-
 # ============================================================================
 # Phase 2.1 - CREATE User
 # ============================================================================
@@ -73,8 +72,6 @@ async def create_user(
     await db.flush()
     await db.refresh(new_user)
     return new_user
-   
-
 
 # ============================================================================
 # Phase 2.3 - LIST Users (with pagination)
@@ -176,24 +173,6 @@ async def delete_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Delete a user.
-
-    Test file: tests/test_users.py::TestDeleteUser
-
-    Requirements:
-    - Accept UUID path parameter
-    - Delete user from database
-    - Return 404 if user not found
-    - Return 204 (no content) on success
-
-    Hints:
-    - First check if user exists
-    - Use delete().where() or db.delete()
-    - Return Response(status_code=204) or just return None with status_code set in decorator
-    """
-    # TODO: Implement user deletion
-    # 1. Find user by ID (404 if not found)
     db.expire_all()
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -201,17 +180,8 @@ async def delete_user(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # 2. Delete from database
     await db.delete(user)
     await db.flush()
-    # 3. Return 204
+
     return None
 
-
-# ============================================================================
-# Integration with main.py
-# ============================================================================
-
-# To use these handlers in main.py, add this line:
-# from handlers.user_handlers import router as user_router
-# app.include_router(user_router)

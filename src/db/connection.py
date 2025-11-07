@@ -76,8 +76,8 @@ async def init_db():
     - In Rust, you'd use SQLx migrations instead
     """
     async with engine.begin() as conn:
-        # Use checkfirst=False to avoid concurrent operation conflicts
-        await conn.run_sync(lambda sync_conn: Base.metadata.create_all(sync_conn, checkfirst=False))
+        # Use checkfirst=True to skip existing tables
+        await conn.run_sync(Base.metadata.create_all)
 
 
 async def drop_db():
@@ -91,5 +91,4 @@ async def drop_db():
     - Useful for clean test environments
     """
     async with engine.begin() as conn:
-        # Use checkfirst=False to avoid concurrent operation conflicts
-        await conn.run_sync(lambda sync_conn: Base.metadata.drop_all(sync_conn, checkfirst=False))
+        await conn.run_sync(Base.metadata.drop_all)
